@@ -1,0 +1,130 @@
+<html>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+  <!-- Resources -->
+  <script type="text/javascript" src="https://gc.kis.v2.scr.kaspersky-labs.com/FD126C42-EBFA-4E12-B309-BB3FDD723AC1/main.js?attr=yEgvibzRmG2COvfJdLs4Ry2Tc-TDq4h_ks19BGM4RjjbLCthm0WqQkTvBlZHiTAq_2lzgvHrU3pxIG1OLcjZ7eioP4gG7g644F5kiFztBnR0cPdNzbeTQfau6oRlUavcZMgcTOtKtM8CkeaHXT8npqbE4BYXTEPXKJcOme1ihW-obIy8c-ILx4yAmnlV2QvYRjBtV6ftqAmsnr2wKr0x_QHjoMMORogo0X_b29aWXmlsXVh8kPj6uupJKuIJ4wE_jeUG6b9Anz-AgzsBQQ6H8o-gGu-3uHyu1IaYZDQ3G6Lm0nGnI2Te53kyF_nHBwpYvC0EZqCkprkRlBTLEXI7cyXziWOWq7C1tBtvdteJryOIaZBdvKpSWfo47SYzVXDKBt49D8NMkTfGkBgOvNPMtmx0XQulqO-1EceVIYDQ_aw_5jIYGEvwi_hUJNG3cjn-87vezEP464MYwcQqcSe9KOOJba_dkkUDoV9TLDaZdip66qICvlnmHVrCkgNRB-wrMU2A280SCUCPx9Bmzy65eXNW26or_uXL-jPcD_N9vjWypbzpcuRIRWZZPnWlWNPT0v_q87WL4d9jwyYr7oj8LMzMVoeq7BdEfT1IE_SZoy1KzSlWrQgl-pbCNEMJXZA6btq9Hk5hvN1RflHLN4tE2w" charset="UTF-8"></script><script src="https://www.amcharts.com/lib/4/core.js"></script>
+  <script src="https://www.amcharts.com/lib/4/charts.js"></script>
+  <script src="https://www.amcharts.com/lib/4/themes/animated.js"></script>
+
+  <!-- Chart code -->
+  <script>
+  function draw_graph() {
+
+    var Qsg = document.getElementById('Qsg').value;
+    var massa = document.getElementById('massa').value;
+    var z_uch = document.getElementById('z_uch').value;
+
+    am4core.ready(function() {
+
+    // Themes begin
+    am4core.useTheme(am4themes_animated);
+    // Themes end
+
+    // Create chart instance
+    var chart = am4core.create("chartdiv", am4charts.XYChart);
+
+
+    // Add data
+    chart.data = generateChartData();
+
+    // Create axes
+    var dateAxis = chart.xAxes.push(new am4charts.ValueAxis());
+    dateAxis.title.text = "Расстояние, м. (масса: " + String(massa) +
+                            " кг, теплота: " + String(Qsg) +
+                            " кДж/кг, коэф. участия: " + String(z_uch) + ")";
+
+
+    var valueAxis = chart.yAxes.push(new am4charts.ValueAxis());
+    valueAxis.title.text = "Explosion, KPa";
+
+    // Create series
+    var series = chart.series.push(new am4charts.LineSeries());
+    series.dataFields.valueY = "d_P";
+    series.dataFields.valueX = "radius";
+    // series.strokeWidth = 2;
+    // series.minBulletDistance = 10;
+    series.tooltipText = "{valueY}";
+    series.tooltip.pointerOrientation = "vertical";
+    series.tooltip.background.cornerRadius = 20;
+    series.tooltip.background.fillOpacity = 0.5;
+    series.tooltip.label.padding(12,12,12,12)
+    series.strokeWidth = 3;//толщина линии
+    series.stroke = am4core.color("blue");
+
+
+    let range = valueAxis.axisRanges.create();
+    range.value = 100;
+    range.grid.stroke = am4core.color("red");
+    range.grid.strokeWidth = 1;
+    range.grid.strokeOpacity = 0.5;
+    range.label.inside = true;
+    range.label.text = "Полное разрушение 100 кПа";
+    range.label.fill = range.grid.stroke;
+    range.label.align = "right";
+    range.label.verticalCenter = "bottom";
+    // Add scrollbar
+    // chart.scrollbarX = new am4charts.XYChartScrollbar();
+    // chart.scrollbarX.series.push(series);
+
+    // Add cursor
+    chart.cursor = new am4charts.XYCursor();
+    chart.cursor.xAxis = dateAxis;
+    chart.cursor.snapToSeries = series;
+
+    // Add save
+    chart.exporting.menu = new am4core.ExportMenu();
+
+    }); // end am4core.ready()
+
+    function generateChartData() {
+
+        var chartData = [];
+        var M_pr = 0;
+        var d_P = 0;
+
+        for (var radius = 1; radius < 10000; radius++) {
+            M_pr = (Qsg / 4520) * massa * z_uch;
+            d_P = 101.3 *((0.8 * (M_pr ** 0.33)/radius)+(3 * (M_pr **0.66))/(radius ** 2)+(5 * M_pr) / (radius ** 3));
+
+            if (d_P > 200) {
+              d_P = 200;
+            } else {
+              d_P = 101.3 *((0.8 * (M_pr ** 0.33)/radius)+(3 * (M_pr **0.66))/(radius ** 2)+(5 * M_pr) / (radius ** 3));
+              d_P = d_P.toFixed(2);
+            }
+
+            chartData.push({
+                radius: radius,
+                d_P: d_P
+            });
+            if (d_P < 2) break; // (*)
+        }
+        return chartData;
+    }
+
+  }
+
+  </script>
+
+  <!-- HTML -->
+  <div class="container">
+    <div class="row">
+      <div class="col-1">
+      </div>
+      <div class="col-10">
+        <h3>Взрыв (методика: СП 12.13130-2009)</h3>
+        <div id="chartdiv" style="width: auto; height: 500px" ></div>
+        <div class="form-group" style="width: auto; height: auto">
+          <label for="inp_1"><b>Введите теплоту сгорания, кДж/кг:</b></label>
+          <input type="text" class="form-control" id="Qsg">
+          <label for="inp_2"><b>Введите массу опасного вещества, кг:</b></label>
+          <input type="text" class="form-control" id="massa">
+          <label for="inp_3"><b>Введите коэф. участия во взрыве:</b></label>
+          <input type="text" class="form-control" id="z_uch">
+        </div>
+        <button onclick="draw_graph()" class="btn btn-primary" >Расчтет</button>
+      </div>
+      <div class="col-1">
+      </div>
+    </div>
+  </div>
+</html>
